@@ -1,0 +1,110 @@
+{"id": "t001", "text": "Refund the $49 charge.", "label": "billing"}
+{"id": "t021", "text": "The dashboard is blank after login. Console shows TypeError: Cannot read properties of undefined.", "label": "technical"}
+{"id": "t041", "text": "Where is order A-104? Tracking has said 'out for delivery' for three days.", "label": "shipping"}
+{"id": "t061", "text": "Can't log in. Password reset email never arrives.", "label": "account"}
+{"id": "t081", "text": "What's the price for the enterprise plan with 200 seats?", "label": "sales"}
+{"id": "t002", "text": "I was charged twice for invoice INV-4412. Please refund the duplicate.", "label": "billing"}
+{"id": "t022", "text": "Webhook deliveries to https://hooks.acme.test/jev have been failing with HTTP 500 since 09:14 UTC.", "label": "technical"}
+{"id": "t042", "text": "Package never arrived. Neighbor says nothing was left at the porch.", "label": "shipping"}
+{"id": "t062", "text": "Locked out after too many 2FA attempts. Authenticator app was on a phone I lost.", "label": "account"}
+{"id": "t082", "text": "Can we get a demo next Tuesday for our CX team?", "label": "sales"}
+{"id": "t003", "text": "Our corporate card was declined at checkout even though the bank says the payment went through. The receipt never arrived.", "label": "billing"}
+{"id": "t023", "text": "API POST /v1/orders returns 429 even under our documented rate limit of 60 rpm.", "label": "technical"}
+{"id": "t043", "text": "Please change the shipping address for order 8831 before it leaves the warehouse. New address: 14 Cedar Ave.", "label": "shipping"}
+{"id": "t063", "text": "Please change the owner email from lea@old.co to lea@new.co. SSO is already set up for the new domain.", "label": "account"}
+{"id": "t083", "text": "We want to upgrade from Team to Business. What's included and how do we switch?", "label": "sales"}
+{"id": "t004", "text": "Why did my annual plan auto-renew yesterday? I thought I turned that off in March.", "label": "billing"}
+{"id": "t024", "text": "App crashed on iOS 18 when attaching a screenshot. Happens every time.", "label": "technical"}
+{"id": "t044", "text": "UPS tracking 1Z999AA10123456784 shows exception: incorrect address. We need a redirect.", "label": "shipping"}
+{"id": "t064", "text": "Forgot my password and the reset link expired in 10 minutes. Can you send a longer-lived one?", "label": "account"}
+{"id": "t084", "text": "Do you offer a nonprofit discount if we send 501(c)(3) paperwork?", "label": "sales"}
+{"id": "t005", "text": "The VAT line on last month's invoice is wrong for our German entity. Can finance reissue it?", "label": "billing"}
+{"id": "t025", "text": "SSO callback from Okta lands on a white screen. No session cookie is set.", "label": "technical"}
+{"id": "t045", "text": "The box arrived crushed and the device has a cracked screen. Delivery photo shows a damaged box.", "label": "shipping"}
+{"id": "t065", "text": "Need admin access for Priya Shah. She's a new IT lead. Current role is viewer.", "label": "account"}
+{"id": "t085", "text": "Comparing plans — do both Pro and Business include SSO, or is that Enterprise only?", "label": "sales"}
+{"id": "t006", "text": "Promo code LAUNCH25 applied on the confirmation page but the charge was still full price.", "label": "billing"}
+{"id": "t026", "text": "GraphQL playground is down. curl to /graphql times out after 30s.", "label": "technical"}
+{"id": "t046", "text": "Need a return label for the extra unit that showed up. We only ordered one.", "label": "shipping"}
+{"id": "t066", "text": "Remove a user who left the company: samir@acme.test. Disable API tokens too if that's account-side.", "label": "account"}
+{"id": "t086", "text": "We're a new account evaluating vendors. Need a quote for annual prepay vs monthly.", "label": "sales"}
+{"id": "t007", "text": "Hi, I'm still being billed after I cancelled on Aug 3. Confirmation email attached in my head: ticket C-8831. Please stop the subscription and refund September.", "label": "billing"}
+{"id": "t027", "text": "Export CSV never finishes. Spinner for 20 minutes, no email.", "label": "technical"}
+{"id": "t047", "text": "Shipment is stuck in customs in Frankfurt since Monday. Can you chase DHL?", "label": "shipping"}
+{"id": "t067", "text": "Invite teammate flow says 'email already in use' but that person can't see the workspace.", "label": "account"}
+{"id": "t087", "text": "Talk to sales: we might buy extra AI add-on seats if the unit price drops below $12.", "label": "sales"}
+{"id": "t008", "text": "Need a PDF invoice for order A-104 for our auditor. The dashboard only shows a summary.", "label": "billing"}
+{"id": "t028", "text": "Integration with Salesforce stopped syncing contacts after yesterday's release. Last successful sync 16:02.", "label": "technical"}
+{"id": "t048", "text": "ETA slipped from Thursday to next week with no email. What's the new delivery window?", "label": "shipping"}
+{"id": "t068", "text": "Session expired loop on safari. Login succeeds then immediately bounces back to /login.", "label": "account"}
+{"id": "t088", "text": "How much for the onboarding package if we already have a dedicated CSM?", "label": "sales"}
+{"id": "t009", "text": "Chargeback incoming unless you reverse the $120 'usage overage' from last Tuesday. We never exceeded the quota.", "label": "billing"}
+{"id": "t029", "text": "Getting error code TS-441: 'invalid webhook signature' after we rotated the signing secret as documented.", "label": "technical"}
+{"id": "t049", "text": "Driver marked delivered but we have no package. Apartment 4B, buzzer broken so maybe left in lobby?", "label": "shipping"}
+{"id": "t069", "text": "I turned on two-factor and now the backup codes PDF is a blank page. I need new codes before I close this laptop.", "label": "account"}
+{"id": "t089", "text": "Procurement needs a MSA and DPA before we can create the production account. Who on your sales team handles that?", "label": "sales"}
+{"id": "t010", "text": "Payment failed three times with Visa ending 4411. Stripe says 'insufficient_funds' but the card works everywhere else.", "label": "billing"}
+{"id": "t030", "text": "Search is returning zero results for tickets we know exist. Started after the reindex.", "label": "technical"}
+{"id": "t050", "text": "Can you hold the fulfillment of PO-22 at the warehouse until we confirm the ship-to?", "label": "shipping"}
+{"id": "t070", "text": "Display name still shows my old nickname. Profile save button does nothing.", "label": "account"}
+{"id": "t090", "text": "Is there a reseller program? We implement this for mid-market clients.", "label": "sales"}
+{"id": "t011", "text": "Can you prorate if we drop from 40 seats to 25 in the middle of the billing cycle?", "label": "billing"}
+{"id": "t031", "text": "Mobile app v3.4.1 force-closes on Android 14 when opening Settings > Notifications.", "label": "technical"}
+{"id": "t051", "text": "Lost package. Tracking went dark after 'arrived at facility' in Memphis.", "label": "shipping"}
+{"id": "t071", "text": "Please deactivate the contractor account for June 12 and keep the audit log.", "label": "account"}
+{"id": "t091", "text": "Trial ends Friday. If we sign a 2-year contract can we lock last year's pricing?", "label": "sales"}
+{"id": "t012", "text": "We wired the payment on Friday (ref WIRE-9921) but the invoice is still marked unpaid.", "label": "billing"}
+{"id": "t032", "text": "Our SDK (python 0.7.0) raises a validation error on system_one responses that include extra answer fields.", "label": "technical"}
+{"id": "t052", "text": "FedEx says they attempted delivery but nobody was home. We were. Please reattempt and leave with the front desk.", "label": "shipping"}
+{"id": "t072", "text": "Single sign-on with Google Workspace fails: Error 403: org_internal. We allow that domain.", "label": "account"}
+{"id": "t092", "text": "Which plan includes the audit log API? We don't want to overbuy.", "label": "sales"}
+{"id": "t013", "text": "Short one: overcharged.", "label": "billing"}
+{"id": "t033", "text": "Hi team — the product is completely down for our EU region. Status page still green. This is blocking checkout for paying customers.", "label": "technical"}
+{"id": "t053", "text": "I moved last month. Please update the default shipping address on the workspace AND reship order 9910 that went to the old office.", "label": "shipping"}
+{"id": "t073", "text": "I can't switch organizations in the picker. Only one workspace appears; I should have three.", "label": "account"}
+{"id": "t093", "text": "Can sales schedule a sandbox for our security review and also walk through seat overage pricing?", "label": "sales"}
+{"id": "t014", "text": "I updated my card and now I can't use the product until billing retries. The retry button just spins. Please take the payment so we are unblocked — this is a billing hold, not a product bug.", "label": "billing"}
+{"id": "t034", "text": "Nightly batch job 'reconcile-orders' failed with a null pointer in worker-7. Logs attached conceptually: NullPointerException at LineItem#tax().", "label": "technical"}
+{"id": "t054", "text": "The label shows 2-day but the carrier scanned it as ground. We paid for expedited shipping.", "label": "shipping"}
+{"id": "t074", "text": "Verification code SMS never shows up in Canada. Can we use email 2FA instead?", "label": "account"}
+{"id": "t094", "text": "We outgrew the starter tier. Please move us to annual Business and confirm the new list price.", "label": "sales"}
+{"id": "t015", "text": "Hello, I noticed two PayPal captures for the same order. One at 14:02 and another at 14:03. Please refund the second and confirm on this thread.", "label": "billing"}
+{"id": "t035", "text": "API key created in the console is rejected with 401 on the first request. Key prefix sk_live looks right.", "label": "technical"}
+{"id": "t055", "text": "Short: tracking?", "label": "shipping"}
+{"id": "t075", "text": "Someone created an account with my email. I never signed up. Please recover or delete it so I can register.", "label": "account"}
+{"id": "t095", "text": "Short: pricing?", "label": "sales"}
+{"id": "t016", "text": "Our nonprofit should be on the discounted rate; finance charged the standard list price for Q3.", "label": "billing"}
+{"id": "t036", "text": "The new filters on the tickets table don't persist after reload. Looks like a frontend state bug.", "label": "technical"}
+{"id": "t056", "text": "Parcel is 11 days late. Customer is a hospital and needs the spare parts this week.", "label": "shipping"}
+{"id": "t076", "text": "Permissions on the billing page are read-only for me even though I'm listed as admin. That's an access issue, not an invoice question.", "label": "account"}
+{"id": "t096", "text": "Our legal redlined the order form. Who should I send the comments to — this is still a purchase, not a support bug.", "label": "sales"}
+{"id": "t017", "text": "The receipt shows tax in a state we have no nexus in. Please correct the tax jurisdiction and rebill.", "label": "billing"}
+{"id": "t037", "text": "Can't connect Slack integration: oauth error invalid_scope for chat:write.", "label": "technical"}
+{"id": "t057", "text": "USPS says insufficient postage. Did the warehouse under-label the box?", "label": "shipping"}
+{"id": "t077", "text": "Short: 2fa locked.", "label": "account"}
+{"id": "t097", "text": "Do you have an education SKU? 40 faculty seats, 9-month term.", "label": "sales"}
+{"id": "t018", "text": "I asked support last week about a missing invoice and also mentioned I forgot my password, but the real issue is still that January invoice never showed up. Please send INV-2026-01.", "label": "billing"}
+{"id": "t038", "text": "Feature flag 'new-composer' is on for our workspace but the UI still shows the old editor. Please check targeting.", "label": "technical"}
+{"id": "t058", "text": "We received someone else's order (packing slip for Acme Robotics). Please arrange a pickup and send ours.", "label": "shipping"}
+{"id": "t078", "text": "We need to rename the workspace slug from acme-test to acme. I don't see that in profile settings.", "label": "account"}
+{"id": "t098", "text": "I'd like to downgrade next renewal if that's possible, or maybe stay if you can match Competitor X's quote of $18k.", "label": "sales"}
+{"id": "t019", "text": "Subscription says 'past due' even though the bank already captured $29.99. Don't lock the workspace.", "label": "billing"}
+{"id": "t039", "text": "I also want a refund later maybe, but first please fix the 500 error on /checkout — we can't take orders at all.", "label": "technical"}
+{"id": "t059", "text": "I know I also asked about upgrading seats, but the urgent thing is the pallet sitting at the dock with no BOL.", "label": "shipping"}
+{"id": "t079", "text": "The password reset worked but then it asked me to verify a device I don't recognize. I did not approve it. Please clear trusted devices.", "label": "account"}
+{"id": "t099", "text": "New company, no account yet. What's the fastest way to get 10 people on a paid plan by Monday?", "label": "sales"}
+{"id": "t020", "text": "Please apply the unused credit from the cancelled add-on to this month's invoice instead of refunding to the card.", "label": "billing"}
+{"id": "t040", "text": "Sync is stuck at 87% for 4 hours. Restarting the connector did nothing.", "label": "technical"}
+{"id": "t060", "text": "Can fulfillment split order 4401 into two shipments? Half to Austin, half to Denver.", "label": "shipping"}
+{"id": "t080", "text": "Also our shipment is late, but first I cannot log in to even check tracking. Reset my password for user id 44119.", "label": "account"}
+{"id": "t100", "text": "The product is fine; we just need volume discounting for 500 seats and a named account manager.", "label": "sales"}
+{"id": "t101", "text": "Invoice INV-7781 lists 12 unused licenses we returned in May. Credit memo never posted.", "label": "billing"}
+{"id": "t103", "text": "Cron 'purge-stale-webhooks' never ran last night. Queue depth is 40k and climbing.", "label": "technical"}
+{"id": "t105", "text": "Need to add a lift-gate flag on the freight shipment leaving Ohio Thursday. Driver already booked.", "label": "shipping"}
+{"id": "t107", "text": "Please force-logout all sessions after the phish we reported. Users should re-enroll 2FA.", "label": "account"}
+{"id": "t109", "text": "Can we start with 15 seats of Business and a clause to add 10 more at the same unit price within 90 days?", "label": "sales"}
+{"id": "t102", "text": "I paid with store credit plus a card. The card was charged the full amount. Please reverse the card capture.", "label": "billing"}
+{"id": "t104", "text": "Docs say the TypeSafe endpoint is POST /v1/systemone but our gateway gets 404 from the old /v1/evaluate path after your migration.", "label": "technical"}
+{"id": "t106", "text": "The packing slip QR code doesn't scan at receiving. Can you reprint labels for orders 2201-2210?", "label": "shipping"}
+{"id": "t108", "text": "I need to merge two user profiles that accidentally got created for the same person (ids 88 and 92).", "label": "account"}
+{"id": "t110", "text": "Is the usage-based plan cheaper than Business if we only spike at month-end close? Need a modeled quote.", "label": "sales"}

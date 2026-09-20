@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jev-ticket-router"
+version = "0.1.0"
+description = "Benchmark TypeSafe Jev vs a traditional LLM on support-ticket routing classification."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "jev-vs-llm-ticket-router" }]
+keywords = ["jev", "typesafe", "benchmark", "classification", "support-tickets"]
+dependencies = [
+    "typesafe-sdk>=0.7.0",
+    "openai>=1.40.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.27.0",
+]
+
+[project.urls]
+Documentation = "https://docs.typesafe.ai"
+Homepage = "https://github.com/SarathChandraBellam/jev-vs-llm-ticket-router"
+
+[project.scripts]
+run-benchmark = "ticket_router.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ticket_router = ["py.typed"]
