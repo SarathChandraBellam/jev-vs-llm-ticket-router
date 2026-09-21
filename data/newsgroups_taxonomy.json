@@ -1,0 +1,13 @@
+{
+  "choice_key": "topic",
+  "schema_name": "topic_route",
+  "instructions": "Which topic should the newsgroup post at the end of `ticket_text` be routed to? Ignore the shared routing handbook, headers, and boilerplate. Use only the author's actual post. Pick the single primary topic.",
+  "llm_system_prompt": "You classify Usenet / mailing-list posts into exactly one topic.\n\nThe user message is a long routing packet. It includes a shared handbook that is identical across classes and does not indicate the label. Classify only the post between BEGIN POST TO CLASSIFY and END POST TO CLASSIFY.\n\nTopics:\n- computer: Computer hardware, graphics, operating systems, IBM/PC, Macintosh, Windows, X11, and programming tools.\n- recreation: Cars, motorcycles, baseball, hockey, and other hobby or sports discussion.\n- science: Cryptography, electronics, medicine, spaceflight, and other scientific discussion.\n- politics: Guns, US politics, Middle East politics, and other political debate.\n- religion: Atheism, Christianity, and other religious belief or theology discussion.\n\nReturn only the structured topic label.",
+  "criteria": {
+    "computer": "Computer hardware, graphics, operating systems, IBM/PC, Macintosh, Windows, X11, and programming tools.",
+    "recreation": "Cars, motorcycles, baseball, hockey, and other hobby or sports discussion.",
+    "science": "Cryptography, electronics, medicine, spaceflight, and other scientific discussion.",
+    "politics": "Guns, US politics, Middle East politics, and other political debate.",
+    "religion": "Atheism, Christianity, and other religious belief or theology discussion."
+  }
+}

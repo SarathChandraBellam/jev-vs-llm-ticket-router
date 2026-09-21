@@ -1,0 +1,13 @@
+{
+  "choice_key": "topic",
+  "schema_name": "topic_route",
+  "instructions": "Which BBC topic should `ticket_text` be classified as? Pick the single primary topic of the article.",
+  "llm_system_prompt": "You classify BBC news articles into exactly one topic.\n\nTopics:\n- business: Companies, markets, economy, jobs, trade, and corporate finance.\n- entertainment: Film, music, TV, theatre, celebrity, and the arts.\n- politics: Government, elections, parliament, public policy, and political debate.\n- sport: Football, rugby, cricket, tennis, and other competitive sports.\n- tech: Computing, gadgets, the internet, telecoms, and technology industry news.\n\nReturn only the structured topic label.",
+  "criteria": {
+    "business": "Companies, markets, economy, jobs, trade, and corporate finance.",
+    "entertainment": "Film, music, TV, theatre, celebrity, and the arts.",
+    "politics": "Government, elections, parliament, public policy, and political debate.",
+    "sport": "Football, rugby, cricket, tennis, and other competitive sports.",
+    "tech": "Computing, gadgets, the internet, telecoms, and technology industry news."
+  }
+}

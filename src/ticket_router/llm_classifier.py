@@ -7,7 +7,11 @@ import os
 import time
 from typing import Any
 
-from ticket_router.categories import DEPARTMENTS, LLM_SYSTEM_PROMPT, department_schema
+from ticket_router.categories import (
+    DEFAULT_TAXONOMY,
+    Taxonomy,
+    classification_schema,
+)
 from ticket_router.types import ClassificationResult
 
 DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
@@ -59,6 +63,7 @@ class LLMClassifier:
         base_url: str | None = None,
         timeout: float = 30.0,
         default_headers: dict[str, str] | None = None,
+        taxonomy: Taxonomy | None = None,
     ) -> None:
         self.api_key = (api_key if api_key is not None else resolve_llm_api_key()).strip()
         self.model = (model if model is not None else resolve_llm_model()).strip()
@@ -67,6 +72,7 @@ class LLMClassifier:
         )
         self.timeout = timeout
         self.default_headers = default_headers if default_headers is not None else openrouter_headers()
+        self.taxonomy = taxonomy or DEFAULT_TAXONOMY
         self._client = None
 
     def __enter__(self) -> LLMClassifier:
@@ -99,15 +105,15 @@ class LLMClassifier:
         completion = self._client.chat.completions.create(
             model=self.model,
             messages=[
-                {"role": "system", "content": LLM_SYSTEM_PROMPT},
+                {"role": "system", "content": self.taxonomy.llm_system_prompt},
                 {"role": "user", "content": text},
             ],
             response_format={
                 "type": "json_schema",
                 "json_schema": {
-                    "name": "department_route",
+                    "name": self.taxonomy.schema_name,
                     "strict": True,
-                    "schema": department_schema(),
+                    "schema": classification_schema(self.taxonomy),
                 },
             },
             temperature=0,
@@ -116,9 +122,9 @@ class LLMClassifier:
         message = completion.choices[0].message
         content = message.content or "{}"
         parsed = json.loads(content)
-        label = str(parsed.get("department") or "").strip().lower()
-        if label not in DEPARTMENTS:
-            raise ValueError(f"LLM returned unknown department {label!r}")
+        label = str(parsed.get(self.taxonomy.choice_key) or "").strip().lower()
+        if label not in self.taxonomy.labels:
+            raise ValueError(f"LLM returned unknown {self.taxonomy.choice_key} {label!r}")
         usage = completion.usage
         return ClassificationResult(
             label=label,

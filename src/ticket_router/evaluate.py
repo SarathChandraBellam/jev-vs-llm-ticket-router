@@ -188,6 +188,7 @@ def _score_model(
     results: Sequence[ClassificationResult],
     high_confidence_threshold: float,
     pricing_model: str,
+    labels: Sequence[str],
 ) -> ModelReport:
     paired = [
         (ticket, result)
@@ -197,7 +198,7 @@ def _score_model(
     n_errors = len(tickets) - len(paired)
     gold = [ticket.label for ticket, _ in paired]
     pred = [result.label for _, result in paired]
-    matrix = confusion_matrix(gold, pred, DEPARTMENTS)
+    matrix = confusion_matrix(gold, pred, labels)
     correct = sum(g == p for g, p in zip(gold, pred))
     accuracy = correct / len(paired) if paired else 0.0
     latencies = [result.latency_ms for _, result in paired]
@@ -245,7 +246,7 @@ def _score_model(
         n=len(paired),
         n_errors=n_errors,
         accuracy=accuracy,
-        per_class=per_class_metrics(matrix, DEPARTMENTS),
+        per_class=per_class_metrics(matrix, labels),
         confusion=matrix,
         latency=latency,
         cost=cost,
@@ -282,7 +283,9 @@ def evaluate(
     named_results: Sequence[tuple[str, Sequence[ClassificationResult], str]],
     *,
     high_confidence_threshold: float = HIGH_CONFIDENCE_DEFAULT,
+    labels: Sequence[str] | None = None,
 ) -> BenchmarkReport:
+    resolved_labels = tuple(labels) if labels is not None else DEPARTMENTS
     models = [
         _score_model(
             name=name,
@@ -290,10 +293,15 @@ def evaluate(
             results=results,
             high_confidence_threshold=high_confidence_threshold,
             pricing_model=pricing_model,
+            labels=resolved_labels,
         )
         for name, results, pricing_model in named_results
     ]
-    return BenchmarkReport(models=models, n_tickets=len(tickets))
+    return BenchmarkReport(
+        models=models,
+        labels=resolved_labels,
+        n_tickets=len(tickets),
+    )
 
 
 def _pct(value: float) -> str:
@@ -339,20 +347,24 @@ def format_report(report: BenchmarkReport) -> str:
     lines.append("## Comparison")
     lines.append("")
     lines.append(
-        "| Model | Accuracy | Mean latency | p50 | p95 | Est. cost | Input tok | Output tok |"
+        "| Model | Accuracy | Macro F1 | Input tok | Input $ | Output tok | Output $ | Est. cost |"
     )
     lines.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
     for model in report.models:
+        n_cls = len(model.per_class) or 1
+        macro = sum(row.f1 for row in model.per_class) / n_cls
+        in_cost = (model.cost.input_tokens / 1_000_000) * model.cost.input_usd_per_mtok
+        out_cost = (model.cost.output_tokens / 1_000_000) * model.cost.output_usd_per_mtok
         lines.append(
-            "| {name} | {acc} | {mean} | {p50} | {p95} | {cost} | {inp} | {out} |".format(
+            "| {name} | {acc} | {f1} | {inp} | {inc} | {out} | {outc} | {cost} |".format(
                 name=model.name,
                 acc=_pct(model.accuracy).strip(),
-                mean=_fmt_ms(model.latency.mean_ms).strip(),
-                p50=_fmt_ms(model.latency.p50_ms).strip(),
-                p95=_fmt_ms(model.latency.p95_ms).strip(),
-                cost=_fmt_usd(model.cost.usd),
+                f1=_pct(macro).strip(),
                 inp=f"{model.cost.input_tokens:,}",
+                inc=_fmt_usd(in_cost),
                 out=f"{model.cost.output_tokens:,}",
+                outc=_fmt_usd(out_cost),
+                cost=_fmt_usd(model.cost.usd),
             )
         )
     lines.append("")
@@ -363,6 +375,9 @@ def format_report(report: BenchmarkReport) -> str:
             f"Accuracy: **{_pct(model.accuracy).strip()}** "
             f"({model.n - len(model.mistakes)}/{model.n})"
         )
+        n_cls = len(model.per_class) or 1
+        macro = sum(row.f1 for row in model.per_class) / n_cls
+        lines.append(f"Macro F1: **{_pct(macro).strip()}**")
         if model.n_errors:
             lines.append(f"Failed calls: {model.n_errors}")
         lines.append("")
@@ -377,7 +392,7 @@ def format_report(report: BenchmarkReport) -> str:
         lines.append("Confusion matrix (rows = gold, columns = predicted):")
         lines.append("")
         lines.append("```")
-        lines.append(format_confusion(model.confusion, DEPARTMENTS))
+        lines.append(format_confusion(model.confusion, report.labels))
         lines.append("```")
         lines.append("")
         lines.append(

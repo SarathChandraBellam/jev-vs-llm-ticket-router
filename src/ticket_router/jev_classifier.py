@@ -7,10 +7,10 @@ import time
 from typing import Any
 
 from ticket_router.categories import (
-    DEPARTMENT_CRITERIA,
+    DEFAULT_TAXONOMY,
     FRUSTRATION_CRITERIA,
     FRUSTRATION_INSTRUCTIONS,
-    ROUTING_INSTRUCTIONS,
+    Taxonomy,
     URGENCY_INSTRUCTIONS,
 )
 from ticket_router.types import ClassificationResult
@@ -19,12 +19,12 @@ DEFAULT_JEV_MODEL = "jev-latest"
 SYSTEMONE_PATH = "/v1/systemone"
 
 
-def _questions() -> dict[str, Any]:
+def _questions(taxonomy: Taxonomy) -> dict[str, Any]:
     return {
-        "department": {
+        taxonomy.choice_key: {
             "type": "choice",
-            "instructions": ROUTING_INSTRUCTIONS,
-            "criteria": dict(DEPARTMENT_CRITERIA),
+            "instructions": taxonomy.instructions,
+            "criteria": dict(taxonomy.criteria),
         },
         "urgent": {
             "type": "noul",
@@ -38,13 +38,13 @@ def _questions() -> dict[str, Any]:
     }
 
 
-def _sdk_questions() -> dict[str, Any]:
+def _sdk_questions(taxonomy: Taxonomy) -> dict[str, Any]:
     from typesafe_sdk import Choice, Noul, Score
 
     return {
-        "department": Choice(
-            instructions=ROUTING_INSTRUCTIONS,
-            criteria=dict(DEPARTMENT_CRITERIA),
+        taxonomy.choice_key: Choice(
+            instructions=taxonomy.instructions,
+            criteria=dict(taxonomy.criteria),
         ),
         "urgent": Noul(instructions=URGENCY_INSTRUCTIONS),
         "frustration": Score(
@@ -69,6 +69,7 @@ class JevClassifier:
         base_url: str | None = None,
         timeout: float = 30.0,
         fan_out: bool = True,
+        taxonomy: Taxonomy | None = None,
     ) -> None:
         self.api_key = api_key or os.environ.get("TYPESAFE_API_KEY") or ""
         self.model = model or os.environ.get("TYPESAFE_MODEL") or DEFAULT_JEV_MODEL
@@ -77,6 +78,7 @@ class JevClassifier:
         ).rstrip("/")
         self.timeout = timeout
         self.fan_out = fan_out
+        self.taxonomy = taxonomy or DEFAULT_TAXONOMY
         self._sdk_client = None
         self._http = None
         self.backend = "unset"
@@ -119,8 +121,9 @@ class JevClassifier:
         raise RuntimeError("JevClassifier must be used as a context manager")
 
     def _classify_sdk(self, text: str) -> ClassificationResult:
-        questions = _sdk_questions() if self.fan_out else {
-            "department": _sdk_questions()["department"]
+        all_questions = _sdk_questions(self.taxonomy)
+        questions = all_questions if self.fan_out else {
+            self.taxonomy.choice_key: all_questions[self.taxonomy.choice_key]
         }
         started = time.perf_counter()
         response = self._sdk_client.system_one(
@@ -129,7 +132,7 @@ class JevClassifier:
             model=self.model,
         )
         latency_ms = (time.perf_counter() - started) * 1000
-        choice = response.choices["department"]
+        choice = response.choices[self.taxonomy.choice_key]
         extras: dict[str, Any] = {
             "backend": self.backend,
             "model": getattr(response, "model", self.model),
@@ -153,7 +156,10 @@ class JevClassifier:
         )
 
     def _classify_http(self, text: str) -> ClassificationResult:
-        questions = _questions() if self.fan_out else {"department": _questions()["department"]}
+        all_questions = _questions(self.taxonomy)
+        questions = all_questions if self.fan_out else {
+            self.taxonomy.choice_key: all_questions[self.taxonomy.choice_key]
+        }
         payload = {
             "model": self.model,
             "state": _state(text),
@@ -172,7 +178,7 @@ class JevClassifier:
         response.raise_for_status()
         body = response.json()
         answers = body.get("answers") or {}
-        department = answers.get("department") or {}
+        department = answers.get(self.taxonomy.choice_key) or {}
         extras: dict[str, Any] = {
             "backend": self.backend,
             "model": body.get("model", self.model),

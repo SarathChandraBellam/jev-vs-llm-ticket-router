@@ -6,6 +6,9 @@ use this map so the comparison is on the same decision problem.
 
 from __future__ import annotations
 
+import json
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
 Department = Literal["billing", "technical", "shipping", "account", "sales"]
@@ -79,15 +82,59 @@ Return only the structured department label."""
 
 def department_schema() -> dict:
     """JSON Schema used by the LLM structured-output baseline."""
+    return classification_schema(DEFAULT_TAXONOMY)
+
+
+@dataclass(frozen=True)
+class Taxonomy:
+    """Label set + instructions shared by Jev Choice and the LLM baseline."""
+
+    labels: tuple[str, ...]
+    criteria: dict[str, str]
+    instructions: str
+    llm_system_prompt: str
+    choice_key: str = "department"
+    schema_name: str = "department_route"
+
+
+def classification_schema(taxonomy: Taxonomy) -> dict:
     return {
         "type": "object",
         "properties": {
-            "department": {
+            taxonomy.choice_key: {
                 "type": "string",
-                "enum": list(DEPARTMENTS),
-                "description": ROUTING_INSTRUCTIONS,
+                "enum": list(taxonomy.labels),
+                "description": taxonomy.instructions,
             }
         },
-        "required": ["department"],
+        "required": [taxonomy.choice_key],
         "additionalProperties": False,
     }
+
+
+DEFAULT_TAXONOMY = Taxonomy(
+    labels=DEPARTMENTS,
+    criteria=dict(DEPARTMENT_CRITERIA),
+    instructions=ROUTING_INSTRUCTIONS,
+    llm_system_prompt=LLM_SYSTEM_PROMPT,
+    choice_key="department",
+    schema_name="department_route",
+)
+
+
+def load_taxonomy(path: str | Path | None = None) -> Taxonomy:
+    if path is None:
+        return DEFAULT_TAXONOMY
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    criteria = dict(payload["criteria"])
+    labels = tuple(payload.get("labels") or criteria.keys())
+    if set(labels) != set(criteria):
+        raise ValueError(f"{path}: labels and criteria keys must match")
+    return Taxonomy(
+        labels=labels,
+        criteria=criteria,
+        instructions=str(payload["instructions"]),
+        llm_system_prompt=str(payload["llm_system_prompt"]),
+        choice_key=str(payload.get("choice_key") or "department"),
+        schema_name=str(payload.get("schema_name") or "department_route"),
+    )

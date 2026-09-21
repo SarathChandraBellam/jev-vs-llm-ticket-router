@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from collections.abc import Sequence
@@ -14,6 +15,7 @@ except ImportError:  # optional for --dry-run if python-dotenv is not installed
     def load_dotenv(*_args: object, **_kwargs: object) -> bool:
         return False
 
+from ticket_router.categories import load_taxonomy
 from ticket_router.dataset import label_counts, load_tickets
 from ticket_router.evaluate import HIGH_CONFIDENCE_DEFAULT, evaluate, format_report, run_classifier
 from ticket_router.heuristic import classify_heuristic, frustration_level, looks_urgent
@@ -56,6 +58,82 @@ def _print_samples(tickets: Sequence[Ticket], results: Sequence[ClassificationRe
         print(f"     {snippet}")
 
 
+def _report_json(tickets: Sequence[Ticket], report) -> str:
+    payload = {
+        "n_tickets": report.n_tickets,
+        "labels": list(report.labels),
+        "mean_chars": round(sum(len(t.text) for t in tickets) / len(tickets)) if tickets else 0,
+        "models": [],
+    }
+    for model in report.models:
+        n_cls = len(model.per_class) or 1
+        macro = sum(row.f1 for row in model.per_class) / n_cls
+        support = sum(row.support for row in model.per_class) or 1
+        weighted = sum(row.f1 * row.support for row in model.per_class) / support
+        in_cost = (model.cost.input_tokens / 1_000_000) * model.cost.input_usd_per_mtok
+        out_cost = (model.cost.output_tokens / 1_000_000) * model.cost.output_usd_per_mtok
+        n = model.n or 1
+        payload["models"].append(
+            {
+                "name": model.name,
+                "n": model.n,
+                "n_errors": model.n_errors,
+                "accuracy": model.accuracy,
+                "macro_f1": macro,
+                "weighted_f1": weighted,
+                "mean_latency_ms": model.latency.mean_ms,
+                "p50_latency_ms": model.latency.p50_ms,
+                "p95_latency_ms": model.latency.p95_ms,
+                "cost_usd": model.cost.usd,
+                "input_tokens": model.cost.input_tokens,
+                "output_tokens": model.cost.output_tokens,
+                "input_cost_usd": in_cost,
+                "output_cost_usd": out_cost,
+                "input_tokens_per_doc": model.cost.input_tokens / n,
+                "output_tokens_per_doc": model.cost.output_tokens / n,
+                "input_usd_per_mtok": model.cost.input_usd_per_mtok,
+                "output_usd_per_mtok": model.cost.output_usd_per_mtok,
+                "cost_notes": model.cost.notes,
+                "mean_confidence": (
+                    model.confidence.mean_confidence if model.confidence else None
+                ),
+                "high_confidence_count": (
+                    model.confidence.high_confidence_count if model.confidence else None
+                ),
+                "high_confidence_accuracy": (
+                    model.confidence.high_confidence_accuracy if model.confidence else None
+                ),
+                "per_class": [
+                    {
+                        "label": row.label,
+                        "support": row.support,
+                        "precision": row.precision,
+                        "recall": row.recall,
+                        "f1": row.f1,
+                    }
+                    for row in model.per_class
+                ],
+                "confusion": model.confusion,
+                "predictions": [
+                    {
+                        "id": ticket.id,
+                        "gold": ticket.label,
+                        "pred": result.label,
+                        "ok": result.error is None and result.label == ticket.label,
+                        "error": result.error,
+                        "latency_ms": result.latency_ms,
+                        "confidence": result.confidence,
+                        "input_tokens": result.input_tokens,
+                        "output_tokens": result.output_tokens,
+                        "chars": len(ticket.text),
+                    }
+                    for ticket, result in zip(tickets, model.predictions)
+                ],
+            }
+        )
+    return json.dumps(payload, indent=2) + "\n"
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
@@ -92,6 +170,22 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Ask only the Choice question (skip Noul urgency and Score frustration)",
     )
+    parser.add_argument(
+        "--taxonomy",
+        default=None,
+        help="JSON taxonomy (labels + criteria). Default is support-ticket departments.",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=30.0,
+        help="Per-request HTTP timeout in seconds (default: 30)",
+    )
+    parser.add_argument(
+        "--json-output",
+        default=None,
+        help="Write machine-readable results JSON to this path",
+    )
     return parser
 
 
@@ -102,8 +196,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("Choose at most one of --jev-only / --llm-only.", file=sys.stderr)
         return 2
 
-    tickets = load_tickets(args.dataset, limit=args.limit)
-    counts = label_counts(tickets)
+    taxonomy = load_taxonomy(args.taxonomy)
+    tickets = load_tickets(args.dataset, limit=args.limit, labels=taxonomy.labels)
+    counts = label_counts(tickets, labels=taxonomy.labels)
     print(f"Loaded {len(tickets)} tickets from {args.dataset}")
     print("Class mix: " + ", ".join(f"{label}={n}" for label, n in counts.items()))
 
@@ -146,7 +241,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             from ticket_router.jev_classifier import JevClassifier
 
             print("\nJev (TypeSafe System One)\n")
-            with JevClassifier(fan_out=not args.no_fan_out) as jev:
+            with JevClassifier(
+                fan_out=not args.no_fan_out,
+                taxonomy=taxonomy,
+                timeout=args.timeout,
+            ) as jev:
                 results = run_classifier(
                     tickets,
                     jev.classify,
@@ -160,7 +259,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             from ticket_router.llm_classifier import LLMClassifier
 
             print("\nLLM structured-output baseline (OpenRouter)\n")
-            with LLMClassifier() as llm:
+            with LLMClassifier(taxonomy=taxonomy, timeout=args.timeout) as llm:
                 results = run_classifier(
                     tickets,
                     llm.classify,
@@ -174,6 +273,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         tickets,
         named_results,
         high_confidence_threshold=args.confidence_threshold,
+        labels=taxonomy.labels,
     )
     rendered = format_report(report)
     print("\n" + rendered)
@@ -182,6 +282,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(rendered, encoding="utf-8")
         print(f"Wrote {output_path}")
+    if args.json_output:
+        json_path = Path(args.json_output)
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+        json_path.write_text(
+            _report_json(tickets, report),
+            encoding="utf-8",
+        )
+        print(f"Wrote {json_path}")
     return 0
 
 
