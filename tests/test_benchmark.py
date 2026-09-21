@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -13,12 +14,22 @@ from ticket_router.categories import DEPARTMENTS
 from ticket_router.dataset import label_counts, load_tickets
 from ticket_router.evaluate import (  # noqa: E402
     confusion_matrix,
+    estimate_cost,
     evaluate,
     format_report,
     percentile,
     per_class_metrics,
 )
 from ticket_router.heuristic import classify_heuristic
+from ticket_router.llm_classifier import (
+    DEFAULT_LLM_MODEL,
+    DEFAULT_OPENROUTER_BASE_URL,
+    LLMClassifier,
+    openrouter_headers,
+    resolve_llm_api_key,
+    resolve_llm_base_url,
+    resolve_llm_model,
+)
 from ticket_router.types import ClassificationResult, Ticket
 
 
@@ -74,6 +85,95 @@ class EvaluateReportTests(unittest.TestCase):
         self.assertIn("Confusion matrix", text)
         self.assertIn("Average Choice confidence", text)
         self.assertIn("50.0%", text)
+        llm_report = evaluate(
+            tickets,
+            [("LLM via OpenRouter (openai/gpt-4o-mini)", results, "openai/gpt-4o-mini")],
+        )
+        llm_text = format_report(llm_report)
+        self.assertIn("OpenRouter", llm_text)
+        self.assertIn("openrouter.ai/models", llm_text)
+
+
+class OpenRouterConfigTests(unittest.TestCase):
+    def test_prefers_openrouter_key_and_model(self) -> None:
+        env = {
+            "OPENROUTER_API_KEY": "or-key",
+            "OPENAI_API_KEY": "oa-key",
+            "OPENROUTER_MODEL": "anthropic/claude-3.5-haiku",
+            "OPENAI_MODEL": "gpt-4o-mini",
+        }
+        with patch.dict("os.environ", env, clear=False):
+            self.assertEqual(resolve_llm_api_key(), "or-key")
+            self.assertEqual(resolve_llm_model(), "anthropic/claude-3.5-haiku")
+
+    def test_falls_back_to_openai_key_and_defaults_to_openrouter(self) -> None:
+        env = {
+            "OPENROUTER_API_KEY": "",
+            "OPENAI_API_KEY": "oa-key",
+            "OPENROUTER_MODEL": "",
+            "OPENAI_MODEL": "",
+            "OPENAI_BASE_URL": "",
+        }
+        with patch.dict("os.environ", env, clear=False):
+            # empty strings should be treated as missing by resolve helpers
+            self.assertEqual(resolve_llm_api_key(), "oa-key")
+            self.assertEqual(resolve_llm_model(), DEFAULT_LLM_MODEL)
+            self.assertEqual(resolve_llm_base_url(), DEFAULT_OPENROUTER_BASE_URL)
+            self.assertTrue(DEFAULT_LLM_MODEL.startswith("openai/"))
+            self.assertEqual(DEFAULT_OPENROUTER_BASE_URL, "https://openrouter.ai/api/v1")
+
+    def test_attribution_headers(self) -> None:
+        with patch.dict(
+            "os.environ",
+            {
+                "OPENROUTER_HTTP_REFERER": "https://example.test",
+                "OPENROUTER_X_TITLE": "custom-title",
+            },
+            clear=False,
+        ):
+            headers = openrouter_headers()
+            self.assertEqual(headers["HTTP-Referer"], "https://example.test")
+            self.assertEqual(headers["X-Title"], "custom-title")
+        with patch.dict(
+            "os.environ",
+            {"OPENROUTER_HTTP_REFERER": "", "OPENROUTER_X_TITLE": ""},
+            clear=False,
+        ):
+            headers = openrouter_headers()
+            self.assertNotIn("HTTP-Referer", headers)
+            self.assertEqual(headers["X-Title"], "jev-vs-llm-ticket-router")
+
+    def test_classifier_defaults_without_constructing_client(self) -> None:
+        with patch.dict(
+            "os.environ",
+            {
+                "OPENROUTER_API_KEY": "or-key",
+                "OPENAI_API_KEY": "",
+                "OPENROUTER_MODEL": "",
+                "OPENAI_MODEL": "",
+                "OPENAI_BASE_URL": "",
+                "OPENROUTER_HTTP_REFERER": "",
+                "OPENROUTER_X_TITLE": "",
+            },
+            clear=False,
+        ):
+            clf = LLMClassifier()
+            self.assertEqual(clf.base_url, DEFAULT_OPENROUTER_BASE_URL)
+            self.assertEqual(clf.model, DEFAULT_LLM_MODEL)
+            self.assertEqual(clf.api_key, "or-key")
+            self.assertEqual(clf.default_headers["X-Title"], "jev-vs-llm-ticket-router")
+            self.assertNotIn("HTTP-Referer", clf.default_headers)
+
+    def test_openrouter_cost_note(self) -> None:
+        cost = estimate_cost(
+            name="LLM via OpenRouter (openai/gpt-4o-mini)",
+            model="openai/gpt-4o-mini",
+            input_tokens=1_000_000,
+            output_tokens=0,
+        )
+        self.assertAlmostEqual(cost.usd, 0.15)
+        self.assertIn("OpenRouter", cost.notes)
+        self.assertIn("openrouter.ai/models", cost.notes)
 
 
 class HeuristicTests(unittest.TestCase):

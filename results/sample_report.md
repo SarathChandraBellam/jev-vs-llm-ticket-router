@@ -9,7 +9,7 @@ Tickets evaluated: 110
 | Model | Accuracy | Mean latency | p50 | p95 | Est. cost | Input tok | Output tok |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Jev (jev-latest) | 90.9% | 184.2 ms | 161.0 ms | 312.4 ms | $0.0016 | 38,940 | 5,280 |
-| LLM (gpt-4o-mini) | 89.1% | 641.8 ms | 598.0 ms | 1104.2 ms | $0.0079 | 42,150 | 2,640 |
+| LLM via OpenRouter (openai/gpt-4o-mini) | 89.1% | 641.8 ms | 598.0 ms | 1104.2 ms | $0.0079 | 42,150 | 2,640 |
 
 ## Jev (jev-latest)
 
@@ -45,7 +45,7 @@ Example mistakes:
 - `t039` gold=technical pred=billing, confidence=0.55: I also want a refund later maybe, but first please fix the 500 error...
 - `t080` gold=account pred=shipping, confidence=0.48: Also our shipment is late, but first I cannot log in...
 
-## LLM (gpt-4o-mini)
+## LLM via OpenRouter (openai/gpt-4o-mini)
 
 Accuracy: **89.1%** (98/110)
 
@@ -69,7 +69,7 @@ technical        2         18         0        1      1
 ```
 
 Latency: mean 641.8 ms, p50 598.0 ms, p95 1104.2 ms
-Tokens: 42,150 input, 2,640 output. Assumed gpt-4o-mini list price: $0.15 / M input, $0.60 / M output (standard API, not batch).
+Tokens: 42,150 input, 2,640 output. Estimated OpenRouter cost for openai/gpt-4o-mini at $0.15 / M input, $0.60 / M output. Actual $/MTok depends on the chosen OpenRouter model; see https://openrouter.ai/models.
 Estimated cost: $0.0079
 
 Example mistakes:
@@ -81,7 +81,7 @@ Example mistakes:
 
 - Accuracy is exact-match of the predicted department against the gold label.
 - Jev also returns Noul(urgency) and Score(frustration) in the same call; those extras are not scored here.
-- Cost is estimated from reported usage tokens and the documented list prices. It is not a bill.
+- Cost is estimated from reported usage tokens. Jev uses the published $0.042 / M input list price (output free). The LLM line is a rough OpenRouter estimate; actual $/MTok depends on the chosen model.
 - High-confidence accuracy is only reported when the model returns a Choice confidence (Jev, and the dry-run heuristic).
 
 Replace this file by running:

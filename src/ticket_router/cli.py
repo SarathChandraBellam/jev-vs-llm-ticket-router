@@ -59,8 +59,8 @@ def _print_samples(tickets: Sequence[Ticket], results: Sequence[ClassificationRe
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Compare TypeSafe Jev vs an OpenAI-compatible LLM on support-ticket "
-            "department routing."
+            "Compare TypeSafe Jev vs an OpenRouter LLM (OpenAI-compatible "
+            "structured outputs) on support-ticket department routing."
         )
     )
     parser.add_argument(
@@ -131,14 +131,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         missing: list[str] = []
         if run_jev and not (os.environ.get("TYPESAFE_API_KEY") or "").strip():
             missing.append("TYPESAFE_API_KEY")
-        if run_llm and not (os.environ.get("OPENAI_API_KEY") or "").strip():
-            missing.append("OPENAI_API_KEY")
+        from ticket_router.llm_classifier import resolve_llm_api_key
+
+        if run_llm and not resolve_llm_api_key():
+            missing.append("OPENROUTER_API_KEY")
         if missing:
-            print(
-                "Missing " + ", ".join(missing) + ". "
-                "Set them in .env or re-run with --dry-run.",
-                file=sys.stderr,
-            )
+            hint = "Set them in .env or re-run with --dry-run."
+            if "OPENROUTER_API_KEY" in missing:
+                hint += " OPENAI_API_KEY is accepted if OPENROUTER_API_KEY is unset."
+            print("Missing " + ", ".join(missing) + ". " + hint, file=sys.stderr)
             return 2
 
         if run_jev:
@@ -158,15 +159,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         if run_llm:
             from ticket_router.llm_classifier import LLMClassifier
 
-            print("\nLLM structured-output baseline\n")
+            print("\nLLM structured-output baseline (OpenRouter)\n")
             with LLMClassifier() as llm:
                 results = run_classifier(
                     tickets,
                     llm.classify,
                     on_ticket=lambda t, r, i: _progress(t, r, i, len(tickets)),
                 )
-            model_name = os.environ.get("OPENAI_MODEL") or "gpt-4o-mini"
-            named_results.append((f"LLM ({model_name})", results, model_name))
+                model_name = llm.model
+            named_results.append((f"LLM via OpenRouter ({model_name})", results, model_name))
             _print_samples(tickets, results)
 
     report = evaluate(

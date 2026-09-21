@@ -1,4 +1,4 @@
-"""OpenAI-compatible structured-output baseline for department routing."""
+"""OpenRouter LLM baseline (OpenAI-compatible structured outputs)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,44 @@ from typing import Any
 from ticket_router.categories import DEPARTMENTS, LLM_SYSTEM_PROMPT, department_schema
 from ticket_router.types import ClassificationResult
 
-DEFAULT_LLM_MODEL = "gpt-4o-mini"
+DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+DEFAULT_LLM_MODEL = "openai/gpt-4o-mini"
+DEFAULT_APP_TITLE = "jev-vs-llm-ticket-router"
+
+
+def resolve_llm_api_key() -> str:
+    """Prefer OPENROUTER_API_KEY; fall back to OPENAI_API_KEY."""
+    return (
+        os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY") or ""
+    ).strip()
+
+
+def resolve_llm_model() -> str:
+    return (
+        os.environ.get("OPENROUTER_MODEL")
+        or os.environ.get("OPENAI_MODEL")
+        or DEFAULT_LLM_MODEL
+    ).strip()
+
+
+def resolve_llm_base_url() -> str:
+    return (os.environ.get("OPENAI_BASE_URL") or DEFAULT_OPENROUTER_BASE_URL).rstrip("/")
+
+
+def openrouter_headers() -> dict[str, str]:
+    """Optional OpenRouter attribution headers (HTTP-Referer, X-Title)."""
+    headers: dict[str, str] = {}
+    referer = (
+        os.environ.get("OPENROUTER_HTTP_REFERER")
+        or os.environ.get("HTTP_REFERER")
+        or ""
+    ).strip()
+    if referer:
+        headers["HTTP-Referer"] = referer
+    title = (os.environ.get("OPENROUTER_X_TITLE") or DEFAULT_APP_TITLE).strip()
+    if title:
+        headers["X-Title"] = title
+    return headers
 
 
 class LLMClassifier:
@@ -21,21 +58,32 @@ class LLMClassifier:
         model: str | None = None,
         base_url: str | None = None,
         timeout: float = 30.0,
+        default_headers: dict[str, str] | None = None,
     ) -> None:
-        self.api_key = api_key or os.environ.get("OPENAI_API_KEY") or ""
-        self.model = model or os.environ.get("OPENAI_MODEL") or DEFAULT_LLM_MODEL
-        self.base_url = base_url or os.environ.get("OPENAI_BASE_URL")
+        self.api_key = (api_key if api_key is not None else resolve_llm_api_key()).strip()
+        self.model = (model if model is not None else resolve_llm_model()).strip()
+        self.base_url = (base_url if base_url is not None else resolve_llm_base_url()).rstrip(
+            "/"
+        )
         self.timeout = timeout
+        self.default_headers = default_headers if default_headers is not None else openrouter_headers()
         self._client = None
 
     def __enter__(self) -> LLMClassifier:
-        if not self.api_key.strip():
-            raise RuntimeError("OPENAI_API_KEY is not set. Export it or pass --dry-run.")
+        if not self.api_key:
+            raise RuntimeError(
+                "OPENROUTER_API_KEY is not set (OPENAI_API_KEY is also accepted). "
+                "Export one of them or pass --dry-run."
+            )
         from openai import OpenAI
 
-        kwargs: dict[str, Any] = {"api_key": self.api_key, "timeout": self.timeout}
-        if self.base_url:
-            kwargs["base_url"] = self.base_url
+        kwargs: dict[str, Any] = {
+            "api_key": self.api_key,
+            "timeout": self.timeout,
+            "base_url": self.base_url,
+        }
+        if self.default_headers:
+            kwargs["default_headers"] = self.default_headers
         self._client = OpenAI(**kwargs)
         return self
 
@@ -80,7 +128,8 @@ class LLMClassifier:
             input_tokens=int(getattr(usage, "prompt_tokens", 0) or 0),
             output_tokens=int(getattr(usage, "completion_tokens", 0) or 0),
             extras={
-                "backend": "openai",
+                "backend": "openrouter",
+                "base_url": self.base_url,
                 "model": completion.model or self.model,
             },
         )

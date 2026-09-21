@@ -13,10 +13,11 @@ from ticket_router.types import ClassificationResult, Ticket
 JEV_INPUT_USD_PER_MTOK = 0.042
 JEV_OUTPUT_USD_PER_MTOK = 0.0
 
-# Assumed list prices for the default OpenAI-compatible baseline (gpt-4o-mini).
-# Standard API, not batch. Cached-input discount is ignored.
+# Rough $/MTok used only for the cost estimate. OpenRouter bills per model;
+# look up the live rate at https://openrouter.ai/models. Cached-input ignored.
 LLM_PRICING_USD_PER_MTOK: dict[str, tuple[float, float]] = {
     "gpt-4o-mini": (0.15, 0.60),
+    "openai/gpt-4o-mini": (0.15, 0.60),
     "gpt-4o": (2.50, 10.00),
     "gpt-4.1-mini": (0.40, 1.60),
     "gpt-4.1": (2.00, 8.00),
@@ -165,8 +166,9 @@ def estimate_cost(
     else:
         in_rate, out_rate = llm_rates(model)
         notes = (
-            f"Assumed {model} list price: ${in_rate:.2f} / M input, "
-            f"${out_rate:.2f} / M output (standard API, not batch)."
+            f"Estimated OpenRouter cost for {model} at ${in_rate:.2f} / M input, "
+            f"${out_rate:.2f} / M output. Actual $/MTok depends on the chosen "
+            "OpenRouter model; see https://openrouter.ai/models."
         )
     usd = (input_tokens / 1_000_000) * in_rate + (output_tokens / 1_000_000) * out_rate
     return CostStats(
@@ -423,8 +425,9 @@ def format_report(report: BenchmarkReport) -> str:
         "those extras are not scored here."
     )
     lines.append(
-        "- Cost is estimated from reported usage tokens and the documented list prices. "
-        "It is not a bill."
+        "- Cost is estimated from reported usage tokens. Jev uses the published "
+        "$0.042 / M input list price (output free). The LLM line is a rough "
+        "OpenRouter estimate; actual $/MTok depends on the chosen model."
     )
     lines.append(
         "- High-confidence accuracy is only reported when the model returns a "

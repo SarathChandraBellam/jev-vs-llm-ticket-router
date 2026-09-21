@@ -3,7 +3,7 @@
 A small, runnable Python benchmark that routes support tickets to a department and compares:
 
 1. **TypeSafe Jev** (System One) — one `Choice` question, plus optional `Noul` / `Score` in the same call
-2. **A traditional LLM** — OpenAI-compatible **structured output** forced to the same five labels
+2. **A traditional LLM via OpenRouter** — OpenAI-compatible **structured output** forced to the same five labels
 
 The goal is a **fair classification comparison** (same tickets, same label set, parallel instructions) plus latency and estimated cost.
 
@@ -48,7 +48,9 @@ cp .env.example .env
 | Variable | Required for | Where to get it |
 | --- | --- | --- |
 | `TYPESAFE_API_KEY` | Jev | [console.typesafe.ai](https://console.typesafe.ai) |
-| `OPENAI_API_KEY` | LLM baseline | [platform.openai.com](https://platform.openai.com) |
+| `OPENROUTER_API_KEY` | LLM baseline | [openrouter.ai/keys](https://openrouter.ai/keys) |
+
+`OPENAI_API_KEY` is an optional fallback if `OPENROUTER_API_KEY` is unset. You do **not** need a key from platform.openai.com; the LLM client talks to OpenRouter's OpenAI-compatible API.
 
 Optional:
 
@@ -56,8 +58,10 @@ Optional:
 | --- | --- | --- |
 | `TYPESAFE_MODEL` | `jev-latest` | Pin with e.g. `jev-1.13.0` |
 | `TYPESAFE_BASE_URL` | `https://api.typesafe.ai` | |
-| `OPENAI_MODEL` | `gpt-4o-mini` | Any OpenAI-compatible chat model that supports JSON schema |
-| `OPENAI_BASE_URL` | OpenAI default | Compatible proxies / gateways |
+| `OPENROUTER_MODEL` | `openai/gpt-4o-mini` | OpenRouter ids include a provider prefix. `OPENAI_MODEL` is a fallback. |
+| `OPENAI_BASE_URL` | `https://openrouter.ai/api/v1` | Override only for a different OpenAI-compatible gateway |
+| `OPENROUTER_HTTP_REFERER` | (unset) | Sent as `HTTP-Referer` if set |
+| `OPENROUTER_X_TITLE` | `jev-vs-llm-ticket-router` | Sent as `X-Title` |
 
 **Do not commit `.env`.** Only `.env.example` is in git.
 
@@ -70,7 +74,7 @@ python scripts/run_benchmark.py --dry-run
 python scripts/run_benchmark.py --dry-run --limit 10
 ```
 
-Full comparison (needs both keys):
+Full comparison (needs `TYPESAFE_API_KEY` + `OPENROUTER_API_KEY`):
 
 ```bash
 python scripts/run_benchmark.py
@@ -105,9 +109,9 @@ The report prints:
 - **Overall accuracy** — predicted department vs gold
 - **Per-class precision / recall / F1** and a **confusion matrix**
 - **Latency** — mean, p50, p95 of wall time per ticket (sequential calls, one shared client)
-- **Estimated cost** — usage tokens × documented list prices (not an invoice)
+- **Estimated cost** — usage tokens × documented/assumed rates (not an invoice)
   - Jev: **$0.042 / M input tokens**, output free
-  - Default LLM (`gpt-4o-mini`): **$0.15 / M input**, **$0.60 / M output** (standard API, not batch)
+  - LLM via OpenRouter: assumed **$0.15 / M input**, **$0.60 / M output** for the default `openai/gpt-4o-mini`. Actual **$/MTok depends on the chosen OpenRouter model** ([openrouter.ai/models](https://openrouter.ai/models))
 - **Jev confidence** — mean Choice confidence, and accuracy on tickets with confidence ≥ threshold
 
 A filled-in example of the tables is in [`results/sample_report.md`](results/sample_report.md) (illustrative numbers, not a live run).
@@ -120,7 +124,7 @@ Jev is built for fast structured decisions; the interesting comparison is usuall
 data/tickets.jsonl              labeled dataset
 src/ticket_router/
   jev_classifier.py             TypeSafeClient Choice (+ Noul/Score fan-out)
-  llm_classifier.py             OpenAI structured outputs
+  llm_classifier.py             OpenRouter structured outputs (OpenAI SDK)
   evaluate.py                   accuracy, F1, latency, cost
   heuristic.py                  dry-run keyword baseline
 scripts/run_benchmark.py        CLI
